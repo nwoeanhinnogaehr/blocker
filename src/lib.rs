@@ -30,6 +30,7 @@ impl<'a, T> Blocker<'a, T> {
 }
 impl<'a, T> Drop for Blocker<'a, T> {
     fn drop(&mut self) {
+        println!("{:?}", &self.ref_count as *const usize);
         let mut lock = self.mutex.lock().unwrap();
         loop {
             lock = self.cond.wait(lock).unwrap();
@@ -53,6 +54,7 @@ impl<T> Blockref<T> {
         mutex: *const Mutex<()>,
         cond: *const Condvar,
     ) -> Blockref<T> {
+        println!("{:?}", ref_count);
         unsafe {
             let _lock = (*mutex).lock().unwrap();
             *ref_count += 1;
@@ -83,6 +85,7 @@ impl<T> Deref for Blockref<T> {
 unsafe impl<T> Sync for Blockref<T> {}
 unsafe impl<T> Send for Blockref<T> {}
 
+/*
 #[test]
 fn test_basic() {
     use std::thread;
@@ -93,7 +96,7 @@ fn test_basic() {
         thread::sleep_ms(1000);
         println!("{}", *z);
     });
-}
+}*/
 
 #[derive(Debug)]
 struct Test {
@@ -126,6 +129,7 @@ fn test_multi_explicit_drop() {
     });
     drop(y);
 }
+/*
 #[test]
 fn test_multi() {
     use std::thread;
@@ -176,4 +180,4 @@ fn test_race() {
         }
         x.x = 6;
     }
-}
+}*/
