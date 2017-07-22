@@ -4,7 +4,7 @@ use std::mem;
 
 pub struct Blocker<'a, T: 'a> {
     data: &'a T,
-    ref_count: Box<usize>,
+    ref_count: usize,
     mutex: Mutex<()>,
     cond: Condvar,
 }
@@ -12,7 +12,7 @@ impl<'a, T> Blocker<'a, T> {
     pub fn new(data: &'a T) -> Blocker<'a, T> {
         Blocker {
             data,
-            ref_count: Box::new(0),
+            ref_count: 0,
             mutex: Mutex::new(()),
             cond: Condvar::new(),
         }
@@ -21,7 +21,7 @@ impl<'a, T> Blocker<'a, T> {
         unsafe {
             Blockref::new(
                 self.data,
-                mem::transmute(&*self.ref_count),
+                mem::transmute(&self.ref_count),
                 &self.mutex,
                 &self.cond,
             )
@@ -33,7 +33,7 @@ impl<'a, T> Drop for Blocker<'a, T> {
         let mut lock = self.mutex.lock().unwrap();
         loop {
             lock = self.cond.wait(lock).unwrap();
-            if *self.ref_count == 0 {
+            if self.ref_count == 0 {
                 break;
             }
         }
